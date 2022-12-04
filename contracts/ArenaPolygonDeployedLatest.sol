@@ -8,10 +8,10 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "./Pokemon.sol";
-import "./Potion.sol";
+import "./MultimonPolygonDeployedLatest.sol";
+import "./PotionPolygonDeployedLatest.sol";
 
-contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ERC721Burnable {
+contract OZ_Token is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ERC721Burnable {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
 
@@ -78,44 +78,47 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownabl
 }
 
 
-contract PLAYGROUND is MyToken {
+contract ARENA is OZ_Token {
     struct avatarInfo{
         uint256 currLoc;
         uint256 battlesWon;
         uint256 potionsBal;
-        uint256[] pokemons;
+        uint256[] multimons;
     }
 
-    event PokemonAdded(uint256 indexed AvatarId, uint256 indexed PokemonId);
+    event MultimonAdded(uint256 indexed AvatarId, uint256 indexed MultimonId);
     event PotionsAdded(uint256 indexed AvatarId, uint256 indexed PotionsAdded );
     event PotionsBurned(uint256 indexed AvatarId, uint256 indexed PotionsBurned );
     event BattleWon(uint256 indexed AvatarId, bool indexed PlayerWon);
 
     mapping(uint256 => avatarInfo) public avatars;
 
-    Pokemon POKEMON;
+    Multimon MULTIMON;
     Potion POTION;
 
-    uint housePokemonBal;
+    uint houseMultimonBal;
 
-    constructor(Pokemon _pokemon,Potion _potion){
-        POKEMON = _pokemon;
+    constructor(Multimon _multimon,Potion _potion){
+        MULTIMON = _multimon;
         POTION = _potion;
-        POKEMON.safeMint(address(this)); 
-        POKEMON.safeMint(address(this)); 
-        housePokemonBal += 2;
-
     }
 
-    function addPokemon() internal {
-        uint256 tokenId = POKEMON.safeMint(address(this)); 
+
+    function initialSetup() external onlyOwner{
+        MULTIMON.safeMint(address(this)); 
+        MULTIMON.safeMint(address(this)); 
+        houseMultimonBal += 2;
+    }
+
+    function addMultimon() internal {
+        uint256 tokenId = MULTIMON.safeMint(address(this)); 
         uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
-        avatars[avatarId].pokemons.push(tokenId);
-        emit PokemonAdded(avatarId, tokenId);
+        avatars[avatarId].multimons.push(tokenId);
+        emit MultimonAdded(avatarId, tokenId);
     }
 
-    // gets pokemon/potion based on chainink random number
-    function collectPokemon() internal{
+    // gets multimon/potion based on chainink random number
+    function collectMultimon() internal{
         
         uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
         avatarInfo storage avatar = avatars[avatarId];
@@ -128,8 +131,8 @@ contract PLAYGROUND is MyToken {
                 POTION.mint(address(this),1);
                 emit PotionsAdded(avatarId, 1);
             }else {
-                // gets pokemon
-                addPokemon();
+                // gets multimon
+                addMultimon();
             }
         }
         // potions gets stealed
@@ -145,13 +148,16 @@ contract PLAYGROUND is MyToken {
         uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
         //  destLoc should be in surrounding
         avatarInfo storage avatar = avatars[avatarId];
-        if (!((destLoc == avatar.currLoc + 1) || (destLoc == avatar.currLoc - 1) || (destLoc == avatar.currLoc + 10) || (destLoc == avatar.currLoc - 10) || (destLoc == avatar.currLoc + 11) || (destLoc == avatar.currLoc - 11) || (destLoc == avatar.currLoc + 9) || (destLoc == avatar.currLoc - 9))){
+        require(destLoc != avatar.currLoc);
+        if ((destLoc == avatar.currLoc + 1) || (destLoc == avatar.currLoc - 1) || (destLoc == avatar.currLoc + 10) || (destLoc == avatar.currLoc - 10) || (destLoc == avatar.currLoc + 11) || (destLoc == avatar.currLoc - 11) || (destLoc == avatar.currLoc + 9) || (destLoc == avatar.currLoc - 9)){
             // jump:  2 potions
+            collectMultimon();
+        }else{
+
             avatar.potionsBal -= 2 ;
             POTION.burn(address(this),2);
             emit PotionsBurned(avatarId, 2);
         }
-        collectPokemon();
         avatar.currLoc = destLoc;
     }
 
@@ -168,32 +174,68 @@ contract PLAYGROUND is MyToken {
             POTION.mint(address(this), 1);
             emit PotionsAdded(avatarId, 1);
         }else{
-            addPokemon();
+            addMultimon();
         }
     }
 
-    function battle(uint challengerPokemonIndex) public{
+    function battle(uint challengerMultimonIndex) public{
 
-        uint randomHouseIndex = uint256(keccak256(abi.encodePacked(block.timestamp))) % housePokemonBal ;
+        uint randomHouseIndex = uint256(keccak256(abi.encodePacked(block.timestamp))) % houseMultimonBal ;
 
-        Pokemon.pokemonDetails memory housePokemon = POKEMON.getPokemonDetails(POKEMON.tokenOfOwnerByIndex(address(this),randomHouseIndex));
+        Multimon.multimonDetails memory houseMultimon = MULTIMON.getMultimonDetails(MULTIMON.tokenOfOwnerByIndex(address(this),randomHouseIndex));
 
         uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
-        Pokemon.pokemonDetails memory challengerPokemon = POKEMON.getPokemonDetails(avatars[avatarId].pokemons[challengerPokemonIndex]);
+        Multimon.multimonDetails memory challengerMultimon = MULTIMON.getMultimonDetails(avatars[avatarId].multimons[challengerMultimonIndex]);
 
-        uint housePokemonScore = housePokemon.attack + housePokemon.defense + housePokemon.mana + housePokemon.speed + housePokemon.strength;
-        uint challengerPokemonScore = challengerPokemon.attack + challengerPokemon.defense + challengerPokemon.mana + challengerPokemon.speed + challengerPokemon.strength;
+        uint houseMultimonScore = houseMultimon.attack + houseMultimon.defense + houseMultimon.mana + houseMultimon.speed + houseMultimon.strength;
+        uint challengerMultimonScore = challengerMultimon.attack + challengerMultimon.defense + challengerMultimon.mana + challengerMultimon.speed + challengerMultimon.strength;
 
         bool playerWon = false;
-        if (challengerPokemonScore > housePokemonScore ){
+        if (challengerMultimonScore > houseMultimonScore ){
             avatars[avatarId].battlesWon += 1 ;
             playerWon = true;
         }
         emit BattleWon(avatarId, playerWon);
     }
 
-    function advanceTo() public {
+    uint32 constant R_GOERLI_DOMAIN_ID = 5;
+    address R_GOERLI_TARGET;
+    address constant S_POLYGON_TESTNET_OUTBOX = 0xe17c37212d785760E8331D4A4395B17b34Ba8cDF;
 
+    function set_R_GOERLI_TARGET(address _target) public onlyOwner{
+        R_GOERLI_TARGET = _target;
     }
 
+    function addressToBytes32(address _addr) internal pure returns (bytes32) {
+        return bytes32(uint256(uint160(_addr)));
+    }
+
+    function advanceTo() public {
+        avatarInfo storage avatar = avatars[tokenOfOwnerByIndex(msg.sender,0)];
+        require(avatar.battlesWon > 3,"Min 3 Battle Wins");
+
+        bytes memory params = abi.encode(avatar);
+
+        IOutbox(S_POLYGON_TESTNET_OUTBOX).dispatch(
+            R_GOERLI_DOMAIN_ID,
+            addressToBytes32(R_GOERLI_TARGET),
+            params
+        );
+
+        // TODO : burn
+        
+
+
+
+
+    }  
+
+}
+
+interface IOutbox {
+    function dispatch(
+        uint32 _destinationDomain,
+        bytes32 _recipientAddress,
+        bytes calldata _messageBody
+    ) external returns (uint256);
 }

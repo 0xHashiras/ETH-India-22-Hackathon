@@ -9,14 +9,14 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ERC721Burnable {
+contract Multimon is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ERC721Burnable {
     
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIdCounter;
 
     address public operator;
 
-    constructor() ERC721("POKEMON", "MON") { }
+    constructor() ERC721("MULTIMON", "MON") { }
 
     function updateOperator(address _operator) external onlyOwner{
         operator = _operator ;
@@ -74,16 +74,17 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownabl
         return super.supportsInterface(interfaceId);
     }
 
-    struct pokemonDetails{
+    struct multimonDetails{
         uint256 attack;
         uint256 defense;
         uint256 mana;
         uint256 speed;
         uint256 strength;
     }
-    mapping (uint256 => pokemonDetails) pokemons;
+    mapping (uint256 => multimonDetails) multimons;
 
-    function getPokemonDetails(uint256 tokenId) public view returns (pokemonDetails memory ){
-        return pokemons[tokenId];
+    function getMultimonDetails(uint256 tokenId) public view returns (multimonDetails memory ){
+        return multimons[tokenId];
     }
+    
 }
