@@ -12,10 +12,15 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ERC721Burnable {
     
     using Counters for Counters.Counter;
-
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721("POKEMON", "MON") {}
+    address public operator;
+
+    constructor() ERC721("POKEMON", "MON") { }
+
+    function updateOperator(address _operator) external onlyOwner{
+        operator = _operator ;
+    }
 
     function pause() public onlyOwner {
         _pause();
@@ -25,14 +30,16 @@ contract Pokemon is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownabl
         _unpause();
     }
 
-    // TODO : access control
-    // function safeMint(address to, string memory uri) public onlyOwner {
-    function safeMint(address to) public returns (uint256){
+    modifier onlyOperator() {
+        require(operator == _msgSender(), "caller is not the operator");
+        _;
+    }
+
+    function safeMint(address to) public onlyOperator returns (uint256){
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
         return tokenId;
-        // _setTokenURI(tokenId, uri);
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)

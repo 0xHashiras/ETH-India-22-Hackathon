@@ -13,13 +13,20 @@ import "./Potion.sol";
 
 contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownable, ERC721Burnable {
     using Counters for Counters.Counter;
-
     Counters.Counter private _tokenIdCounter;
 
-    constructor() ERC721("MyToken", "MTK") {}
+    string public baseURI;
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "revise-url/";
+    constructor() ERC721("MyToken", "MTK") {
+        baseURI = "revise-url/";
+    }
+
+    function _baseURI() internal view override returns (string memory) {
+        return baseURI;
+    }
+
+    function updateBaseURI(string memory _uri) external onlyOwner {
+        baseURI = _uri ;
     }
 
     function pause() public onlyOwner {
@@ -30,7 +37,8 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownabl
         _unpause();
     }
 
-    function safeMint(address to) public onlyOwner {
+    function safeMint(address to) external {
+        require(balanceOf(to)==0,"User can mint only one NFT Avatar");
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
