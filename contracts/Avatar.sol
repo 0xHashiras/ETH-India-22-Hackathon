@@ -18,6 +18,10 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownabl
 
     constructor() ERC721("MyToken", "MTK") {}
 
+    function _baseURI() internal pure override returns (string memory) {
+        return "revise-url/";
+    }
+
     function pause() public onlyOwner {
         _pause();
     }
@@ -26,11 +30,10 @@ contract MyToken is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownabl
         _unpause();
     }
 
-    function safeMint(address to, string memory uri) public onlyOwner {
+    function safeMint(address to) public onlyOwner {
         uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
         _safeMint(to, tokenId);
-        _setTokenURI(tokenId, uri);
     }
 
     function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize)
@@ -75,6 +78,11 @@ contract PLAYGROUND is MyToken {
         uint256[] pokemons;
     }
 
+    event PokemonAdded(uint256 indexed AvatarId, uint256 indexed PokemonId);
+    event PotionsAdded(uint256 indexed PotionsAdded );
+    event PotionsBurned(uint256 indexed PotionsBurned );
+    event BattleWon(uint256 indexed avatarId, bool indexed PlayerWon);
+
     mapping(uint256 => avatarInfo) public avatars;
 
     Pokemon POKEMON;
@@ -95,6 +103,7 @@ contract PLAYGROUND is MyToken {
         uint256 tokenId = POKEMON.safeMint(address(this)); 
         uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
         avatars[avatarId].pokemons.push(tokenId);
+        emit PokemonAdded(avatarId, tokenId);
     }
 
     // gets pokemon/potion based on chainink random number
@@ -108,6 +117,7 @@ contract PLAYGROUND is MyToken {
                 // gets potion
                 avatar.potionsBal += 1 ;
                 POTION.mint(address(this),1);
+                emit PotionsAdded(1);
             }else {
                 // gets pokemon
                 addPokemon();
@@ -118,6 +128,7 @@ contract PLAYGROUND is MyToken {
             // remove potion
             avatar.potionsBal -= 2 ;
             POTION.burn(address(this),2);
+            emit PotionsBurned(2);
         }
     }
 
@@ -128,6 +139,7 @@ contract PLAYGROUND is MyToken {
             // jump - 2 potions
             avatar.potionsBal -= 2 ;
             POTION.burn(address(this),2);
+            emit PotionsBurned(2);
         }
         collectPokemon();
     }
@@ -159,9 +171,12 @@ contract PLAYGROUND is MyToken {
         uint housePokemonScore = housePokemon.attack + housePokemon.defense + housePokemon.mana + housePokemon.speed + housePokemon.strength;
         uint challengerPokemonScore = challengerPokemon.attack + challengerPokemon.defense + challengerPokemon.mana + challengerPokemon.speed + challengerPokemon.strength;
 
+        bool playerWon = false;
         if (challengerPokemonScore > housePokemonScore ){
             avatars[avatarId].battlesWon += 1 ;
+            playerWon = true;
         }
+        emit BattleWon(avatarId, playerWon);
     }
 
     function advanceTo() public {
