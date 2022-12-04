@@ -87,9 +87,9 @@ contract PLAYGROUND is MyToken {
     }
 
     event PokemonAdded(uint256 indexed AvatarId, uint256 indexed PokemonId);
-    event PotionsAdded(uint256 indexed PotionsAdded );
-    event PotionsBurned(uint256 indexed PotionsBurned );
-    event BattleWon(uint256 indexed avatarId, bool indexed PlayerWon);
+    event PotionsAdded(uint256 indexed AvatarId, uint256 indexed PotionsAdded );
+    event PotionsBurned(uint256 indexed AvatarId, uint256 indexed PotionsBurned );
+    event BattleWon(uint256 indexed AvatarId, bool indexed PlayerWon);
 
     mapping(uint256 => avatarInfo) public avatars;
 
@@ -116,8 +116,9 @@ contract PLAYGROUND is MyToken {
 
     // gets pokemon/potion based on chainink random number
     function collectPokemon() internal{
-        // TODO : query random
-        avatarInfo storage avatar = avatars[tokenOfOwnerByIndex(msg.sender,0)];
+        
+        uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
+        avatarInfo storage avatar = avatars[avatarId];
         uint randomNo = uint256(keccak256(abi.encodePacked(block.timestamp))) ;
         if (randomNo % 10 == 0 ) {
             randomNo = randomNo / 10 ;
@@ -125,7 +126,7 @@ contract PLAYGROUND is MyToken {
                 // gets potion
                 avatar.potionsBal += 1 ;
                 POTION.mint(address(this),1);
-                emit PotionsAdded(1);
+                emit PotionsAdded(avatarId, 1);
             }else {
                 // gets pokemon
                 addPokemon();
@@ -136,20 +137,22 @@ contract PLAYGROUND is MyToken {
             // remove potion
             avatar.potionsBal -= 2 ;
             POTION.burn(address(this),2);
-            emit PotionsBurned(2);
+            emit PotionsBurned(avatarId, 2);
         }
     }
 
     function move(uint256 destLoc) public{
+        uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
         //  destLoc should be in surrounding
-        avatarInfo storage avatar = avatars[tokenOfOwnerByIndex(msg.sender,0)];
+        avatarInfo storage avatar = avatars[avatarId];
         if (!((destLoc == avatar.currLoc + 1) || (destLoc == avatar.currLoc - 1) || (destLoc == avatar.currLoc + 10) || (destLoc == avatar.currLoc - 10) || (destLoc == avatar.currLoc + 11) || (destLoc == avatar.currLoc - 11) || (destLoc == avatar.currLoc + 9) || (destLoc == avatar.currLoc - 9))){
-            // jump - 2 potions
+            // jump:  2 potions
             avatar.potionsBal -= 2 ;
             POTION.burn(address(this),2);
-            emit PotionsBurned(2);
+            emit PotionsBurned(avatarId, 2);
         }
         collectPokemon();
+        avatar.currLoc = destLoc;
     }
 
     enum OnSale{
@@ -158,10 +161,12 @@ contract PLAYGROUND is MyToken {
     }
 
     function shop(OnSale item) public{
-        avatarInfo storage avatar = avatars[tokenOfOwnerByIndex(msg.sender,0)];
+        uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
+        avatarInfo storage avatar = avatars[avatarId];
         if(item == OnSale.POTION){
             avatar.potionsBal += 1 ; 
             POTION.mint(address(this), 1);
+            emit PotionsAdded(avatarId, 1);
         }else{
             addPokemon();
         }
