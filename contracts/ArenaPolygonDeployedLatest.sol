@@ -111,7 +111,7 @@ contract ARENA is OZ_Token {
     }
 
     function addMultimon() internal {
-        uint256 tokenId = MULTIMON.safeMint(address(this)); 
+        uint256 tokenId = MULTIMON.safeMint(address(this),MULTIMON.totalSupply()); 
         uint256 avatarId = tokenOfOwnerByIndex(msg.sender,0);
         avatars[avatarId].multimons.push(tokenId);
         emit MultimonAdded(avatarId, tokenId);
@@ -211,10 +211,11 @@ contract ARENA is OZ_Token {
     }
 
     function advanceTo() public {
-        avatarInfo storage avatar = avatars[tokenOfOwnerByIndex(msg.sender,0)];
+        uint avatarID = tokenOfOwnerByIndex(msg.sender,0);
+        avatarInfo storage avatar = avatars[avatarID];
         require(avatar.battlesWon > 3,"Min 3 Battle Wins");
 
-        bytes memory params = abi.encode(avatar);
+        bytes memory params = abi.encode(avatar,avatarID,msg.sender);
 
         IOutbox(S_POLYGON_TESTNET_OUTBOX).dispatch(
             R_GOERLI_DOMAIN_ID,

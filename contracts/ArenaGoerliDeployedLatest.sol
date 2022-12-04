@@ -37,10 +37,10 @@ contract OZ_Token is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownab
         _unpause();
     }
 
-    function safeMint(address to) external {
+    function safeMint(address to,uint256 tokenId) internal {
         require(balanceOf(to)==0,"User can mint only one NFT Avatar");
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
+        // uint256 tokenId = _tokenIdCounter.current();
+        // _tokenIdCounter.increment();
         _safeMint(to, tokenId);
     }
 
@@ -105,8 +105,8 @@ contract ARENA is OZ_Token {
 
 
     function initialSetup() external onlyOwner{
-        MULTIMON.safeMint(address(this)); 
-        MULTIMON.safeMint(address(this)); 
+        MULTIMON.safeMint(address(this),MULTIMON.totalSupply()); 
+        MULTIMON.safeMint(address(this),MULTIMON.totalSupply()); 
         houseMultimonBal += 2;
     }
 
@@ -217,9 +217,19 @@ contract ARENA is OZ_Token {
         address sender = bytes32ToAddress(_sender);
         emit Received(sender, _message);
 
-        avatarInfo memory avatar = abi.decode(_message,(avatarInfo));
+        (avatarInfo memory avatarData,uint avatarID,address owner) = abi.decode(_message,(avatarInfo,uint,address));
 
         // TODO : mint avatar and its associates
+        safeMint(owner,avatarID);
+        for (uint i =0;i<avatarData.multimons.length;i++){
+            avatar.multimons.push(avatarData[i]);
+            MULTIMON.safeMint(address(this),avatarData[i])
+        }
+
+        
+
+
+
     } 
 
 }

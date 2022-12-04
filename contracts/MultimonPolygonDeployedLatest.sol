@@ -35,9 +35,9 @@ contract Multimon is ERC721, ERC721Enumerable, ERC721URIStorage, Pausable, Ownab
         _;
     }
 
-    function safeMint(address to) public onlyOperator returns (uint256){
-        uint256 tokenId = _tokenIdCounter.current();
-        _tokenIdCounter.increment();
+    function safeMint(address to),uint256 tokenId public onlyOperator returns (uint256){
+        // uint256 tokenId = _tokenIdCounter.current();
+        // _tokenIdCounter.increment();
         _safeMint(to, tokenId);
         return tokenId;
     }
